@@ -1,0 +1,25 @@
+[settings]
+auto_install = false
+
+[env]
+GOTOOLCHAIN = "local"
+
+[tools]
+go = "1.27.2"
+
+[tasks.run]
+run = "go run ."
+
+[tasks.test]
+run = ["go vet ./...", "go test -race ./..."]
+
+[tasks.build]
+run = '''
+for arch in amd64 arm64; do
+  CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -trimpath -ldflags='-s -w' -o "dist/$arch/deploy-demo" .
+done
+'''
+
+[tasks.image]
+depends = ["build"]
+run = "docker buildx build --platform linux/amd64,linux/arm64 --load -t deploy-demo:local ."
