@@ -56,7 +56,7 @@ The Dockerfile expects these binaries to exist in `dist/`.
 
 After the image is published and public:
 
-1. Deploy `ghcr.io/unkeyed/deploy-demo:v0.1.0` as a container image in Unkey.
+1. Deploy `ghcr.io/unkeyed/deploy-demo:latest` as a container image in Unkey.
    Set the runtime port to 8080 and the health check path to `/health`.
 2. Create a keyspace and an API key in **API Management**, in the same workspace.
 3. Open the app's **Policies**, add **Key Auth**, and select your keyspace.
@@ -87,9 +87,13 @@ omitted from the response when the key has none.
 
 ## Publish
 
-The GitHub Actions workflow tests pushes to `main`, pull requests, and version
-tags. A tag such as `v0.1.0` publishes both image architectures to
-`ghcr.io/unkeyed/deploy-demo:v0.1.0`, using the workflow's `GITHUB_TOKEN`.
+The GitHub Actions workflow tests and builds pull requests without publishing.
+After tests pass, each push to `main` publishes both image architectures to
+`ghcr.io/unkeyed/deploy-demo:latest`. A version tag such as `v0.1.0` publishes
+`ghcr.io/unkeyed/deploy-demo:v0.1.0` without changing `latest`.
+
+Both push types also publish a tag with the full commit SHA, using the workflow's
+`GITHUB_TOKEN`. Use a commit tag to deploy a specific revision.
 
 After the first publication, an organization package admin must change the GHCR
 package visibility to public. Public source does not make the image public.
