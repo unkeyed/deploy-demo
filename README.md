@@ -9,10 +9,16 @@ database, root key, or runtime configuration. `PORT` defaults to 8080.
 | `GET /` | Gateway setup instructions |
 | `GET /health` | `{"status":"ok"}` |
 | `GET /api/hello` | A greeting and request ID |
+| `GET /api/whoami` | Caller subject, key ID, keyspace ID, permissions, and request ID from the gateway principal |
 
-The container is public by default. Unkey's gateway verifies API keys, not this
-app. The app does not trust principal headers or echo credentials. Keep the
-container behind the gateway after you configure authentication.
+The greeting is public by default. `/api/whoami` returns 401 until the gateway
+provides an API key principal. Unkey's gateway verifies API keys, not this app.
+The app does not echo credentials or key metadata.
+
+The `X-Unkey-Principal` header is unsigned. Trust it only when the container is
+reachable through Unkey's gateway, which removes client-supplied `X-Unkey-*`
+headers before setting the principal. Direct container access lets callers forge
+the header. A Bearer token alone does not authenticate a direct request.
 
 ## Run and test
 
@@ -57,15 +63,16 @@ After the image is published and public:
    Match the path prefix `/api/`, use Bearer authentication, and set credit cost
    to 0. Leave `/` and `/health` public.
 4. Redeploy to activate the policy.
-5. Request `/api/hello` without a key. Expect 401.
-6. Repeat with the API key. Expect 200 and a greeting.
+5. Request `/api/whoami` without a key. Expect 401.
+6. Repeat with the API key. Expect 200 with the key's ID and permissions. The
+   subject is the linked identity's external ID, or the key ID if unlinked.
 7. Revoke the key and retry. Expect 401.
 
 ```bash
 export DEMO_URL='https://your-deployment-domain'
-curl -i "$DEMO_URL/api/hello"
+curl -i "$DEMO_URL/api/whoami"
 read -rs -p 'Demo API key: ' DEMO_API_KEY; echo
-curl -i "$DEMO_URL/api/hello" \
+curl -i "$DEMO_URL/api/whoami" \
   -H "Authorization: Bearer $DEMO_API_KEY"
 unset DEMO_API_KEY
 ```
@@ -73,6 +80,10 @@ unset DEMO_API_KEY
 Use an end-user API key, never a root key. Add permissions or per-key rate limits
 to try 403 and 429 responses. See
 [gateway API key authentication](https://www.unkey.com/docs/compute/gateway/api-key-auth).
+
+`/api/whoami` accepts version `v1` API key principals. It ignores unknown optional
+fields and returns 502 for malformed or unsupported principals. Permissions are
+omitted from the response when the key has none.
 
 ## Publish
 

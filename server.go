@@ -36,13 +36,14 @@ func newServer() (*zen.Server, error) {
 	server.RegisterRoute(middleware, zen.NewRoute(http.MethodGet, "/{$}", index))
 	server.RegisterRoute(middleware, zen.NewRoute(http.MethodGet, "/health", health))
 	server.RegisterRoute(middleware, zen.NewRoute(http.MethodGet, "/api/hello", hello))
+	server.RegisterRoute(middleware, zen.NewRoute(http.MethodGet, "/api/whoami", whoami))
 	return server, nil
 }
 
 func index(_ context.Context, s *zen.Session) error {
 	return s.JSON(http.StatusOK, indexResponse{
-		Message: "Your Unkey deployment is running. Try GET /api/hello.",
-		Next:    "The API is public until you add a Key Auth policy for /api/ and redeploy.",
+		Message: "Your Unkey deployment is running. Try GET /api/hello or GET /api/whoami.",
+		Next:    "The greeting is public until you add a Key Auth policy for /api/ and redeploy.",
 		Docs:    "https://www.unkey.com/docs/compute/gateway/api-key-auth",
 	})
 }
